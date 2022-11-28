@@ -9,7 +9,7 @@ import csv
 import re
 import string
 from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.naive_bayes import ComplementNB
+from sklearn.naive_bayes import MultinomialNB
 from sklearn.feature_extraction.text import HashingVectorizer
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfTransformer
@@ -35,7 +35,7 @@ with open('testdata.manual.2009.06.14.csv', 'r') as csvfile:    #read test file
     for i, row in enumerate(reader):
         test_db.append(row)
 
-training_db = training_db[0:10000]
+#training_db = training_db[0:10000]
 
 print('moving training into x y')
 for each in training_db:    #move TRAINING sentiment score into y and each into x
@@ -62,32 +62,9 @@ for each in y_training:
     if each == 4:
         each = 1
 
-#vectorizing training
-print('vectorizing training')
-vectorizer = CountVectorizer()
-
-#encoding all words in the x_training
-vectorizer.fit(x_training)
-#printing vocab
-print("Vocabulary: ", vectorizer.vocabulary_)
-
-print('encode x_training')
-vectorized_x = vectorizer.transform(x_training)
-# Summarizing the Encoded Texts
-
-print('toarray')
-#x_training = vectorized_x.toarray()
-x_training = []
-for each in vectorized_x:
-    x_training.append(each.toarray())
-
-
-print("Encoded Document is:")
-print(x_training[0:3])
-
-print('training model')
-clf = ComplementNB()
-clf.fit([x_training], y_training)
+for each in y_training:
+    if each == 4:
+        print('found')
 
 print('moving test into x y')
 for each in test_db:    #move TEST sentiment score into y and each into x
@@ -109,16 +86,34 @@ for i in range(0, len(test_db), 1):
     x_test[i] = ''.join(x_test[i])
     x_test[i] = x_test[i].lstrip(' ')
 
+print('preprocessing y_test')
+for each in y_test:
+    if each == 4:
+        each = 1    #ignore 2
+
+clf = Pipeline([('hv', HashingVectorizer(alternate_sign=False, stop_words='english')),
+                                         ('tfidf', TfidfTransformer()),
+                                         ('clf', MultinomialNB())])
+
+clf.fit(x_training, y_training)
 
 t = 0
 f = 0
+n = 0
 for each_x, each_y in zip(x_test, y_test):
     pred = clf.predict([each_x])
-    if (pred == each_y):
+    if (each_y == 2):
+        n += 1  #ignore if neutral
+    elif (pred == each_y):
         t += 1
     else:
         f += 1
 
-print(t, f)
+print(t, f, n)
+
+x_test2 = 'i love the world'
+print(clf.predict([x_test2]))
+
+
 
 print('end')
