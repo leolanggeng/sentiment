@@ -111,7 +111,21 @@ for each_x, each_y in zip(x_test, y_test):
 print("Correct = " + str(correct) + "\nIncorrect = " + str(incorrect) + "\nPositive = " + str(positive) +
       "\nNegative = " + str(negative) + "\nNeutral = " + str(neutral))
 
-x_test2 = 'i love the world'
+val = input("Enter your string tweet.  Max 140 characters. \n> ")
+while 1:
+    if val == '0':
+        break
+    arr = [val]
+    process_tweet(arr)
+    score = clf.predict(arr)
+    if score == 4:
+        print("Your tweet is predicted to be Positive.\n")
+    elif score == 0:
+        print("Your tweet is predicted to be Negative.\n")
+    else:
+        print("Your tweet is predicted to be Neutral.\n")
+
+    val = input("Enter your string tweet.  Max 140 characters. \n> ")
 print(clf.predict([x_test2]))
 
 
