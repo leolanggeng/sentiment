@@ -14,6 +14,22 @@ from sklearn.feature_extraction.text import HashingVectorizer
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfTransformer
 
+def process_tweet(input_data):
+    for i in range(0, len(input_data), 1):
+        input_data[i] = re.sub(r'\&\w*;', '', input_data[i])
+        input_data[i] = re.sub('@[^\s]+', '', input_data[i])
+        input_data[i] = re.sub(r'\$\w*', '', input_data[i])
+        input_data[i] = input_data[i].lower()
+        input_data[i] = re.sub(r'https?:\/\/.*\/\w*', '', input_data[i])
+        input_data[i] = re.sub(r'#\w*', '', input_data[i])
+        input_data[i] = re.sub(r'[' + string.punctuation.replace('@', '') + ']+', ' ', input_data[i])
+        input_data[i] = re.sub(r'\b\w{1,2}\b', '', input_data[i])
+        input_data[i] = re.sub(r'\s\s+', ' ', input_data[i])
+        input_data[i] = [char for char in list(input_data[i]) if char not in string.punctuation]
+        input_data[i] = ''.join(input_data[i])
+        input_data[i] = input_data[i].lstrip(' ')
+
+
 print('hello world')
 
 training_db = []
@@ -43,28 +59,12 @@ for each in training_db:    #move TRAINING sentiment score into y and each into 
     y_training.append(int(each[0]))
 
 print('preprocessing x_training')
-for i in range(0, len(training_db), 1):
-    x_training[i] = re.sub(r'\&\w*;', '', x_training[i])
-    x_training[i] = re.sub('@[^\s]+', '', x_training[i])
-    x_training[i] = re.sub(r'\$\w*', '', x_training[i])
-    x_training[i] = x_training[i].lower()
-    x_training[i] = re.sub(r'https?:\/\/.*\/\w*', '', x_training[i])
-    x_training[i] = re.sub(r'#\w*', '', x_training[i])
-    x_training[i] = re.sub(r'[' + string.punctuation.replace('@', '') + ']+', ' ', x_training[i])
-    x_training[i] = re.sub(r'\b\w{1,2}\b', '', x_training[i])
-    x_training[i] = re.sub(r'\s\s+', ' ', x_training[i])
-    x_training[i] = [char for char in list(x_training[i]) if char not in string.punctuation]
-    x_training[i] = ''.join(x_training[i])
-    x_training[i] = x_training[i].lstrip(' ')
+process_tweet(x_training)
 
 print('preprocessing y_training')
 for each in y_training:
     if each == 4:
         each = 1
-
-for each in y_training:
-    if each == 4:
-        print('found')
 
 print('moving test into x y')
 for each in test_db:    #move TEST sentiment score into y and each into x
@@ -72,19 +72,7 @@ for each in test_db:    #move TEST sentiment score into y and each into x
     y_test.append(int(each[0]))
 
 print('preprocessing x_test')
-for i in range(0, len(test_db), 1):
-    x_test[i] = re.sub(r'\&\w*;', '', x_test[i])
-    x_test[i] = re.sub('@[^\s]+', '', x_test[i])
-    x_test[i] = re.sub(r'\$\w*', '', x_test[i])
-    x_test[i] = x_test[i].lower()
-    x_test[i] = re.sub(r'https?:\/\/.*\/\w*', '', x_test[i])
-    x_test[i] = re.sub(r'#\w*', '', x_test[i])
-    x_test[i] = re.sub(r'[' + string.punctuation.replace('@', '') + ']+', ' ', x_test[i])
-    x_test[i] = re.sub(r'\b\w{1,2}\b', '', x_test[i])
-    x_test[i] = re.sub(r'\s\s+', ' ', x_test[i])
-    x_test[i] = [char for char in list(x_test[i]) if char not in string.punctuation]
-    x_test[i] = ''.join(x_test[i])
-    x_test[i] = x_test[i].lstrip(' ')
+process_tweet(x_test)
 
 print('preprocessing y_test')
 for each in y_test:
@@ -97,19 +85,31 @@ clf = Pipeline([('hv', HashingVectorizer(alternate_sign=False, stop_words='engli
 
 clf.fit(x_training, y_training)
 
+incorrect = 0
+correct = 0
+positive = 0
+negative = 0
+neutral = 0
+
 t = 0
 f = 0
 n = 0
 for each_x, each_y in zip(x_test, y_test):
     pred = clf.predict([each_x])
-    if (each_y == 2):
-        n += 1  #ignore if neutral
-    elif (pred == each_y):
-        t += 1
+    if pred == each_y:
+        correct += 1
+        if pred == 4:
+            positive += 1
+        elif pred == 0:
+            negative += 1
     else:
-        f += 1
+        if each_y == 2:
+            neutral += 1
+        else:
+            incorrect += 1
 
-print(t, f, n)
+print("Correct = " + str(correct) + "\nIncorrect = " + str(incorrect) + "\nPositive = " + str(positive) +
+      "\nNegative = " + str(negative) + "\nNeutral = " + str(neutral))
 
 x_test2 = 'i love the world'
 print(clf.predict([x_test2]))
@@ -117,3 +117,4 @@ print(clf.predict([x_test2]))
 
 
 print('end')
+
